@@ -1,0 +1,29 @@
+# Load Exchange Snapin (needed if running outside EMS)
+if (-not (Get-PSSnapin -Name Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction SilentlyContinue)) {
+    Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn
+}
+
+# Use Exchange Install Path from ENV
+$ExchangePath = $env:ExchangeInstallPath
+$ServerName = $env:COMPUTERNAME
+$TimeStamp = Get-Date -Format "yyyy-MM-dd_HH-mm"
+
+# Start Logging
+$LogFile = "$ExchangePath\Logging\PatchPrep_$TimeStamp.log"
+"[$TimeStamp] Starting Exchange patch preparation on $ServerName" | Tee-Object -FilePath $LogFile
+
+# Optional: Put Server into Maintenance Mode (if script exists)
+$MaintenanceScript = "$ExchangePath\Scripts\Start-ExchangeServerMaintenance.ps1"
+if (Test-Path $MaintenanceScript) {
+    "[$TimeStamp] Entering Maintenance Mode..." | Tee-Object -Append -FilePath $LogFile
+    & $MaintenanceScript -ServerName $ServerName | Tee-Object -Append -FilePath $LogFile
+}
+
+# Gracefully Stop All Exchange Services
+"[$TimeStamp] Stopping Exchange services..." | Tee-Object -Append -FilePath $LogFile
+Get-Service *MSExchange* | Where-Object { $_.Status -eq "Running" } | ForEach-Object {
+    "Stopping $($_.Name)" | Tee-Object -Append -FilePath $LogFile
+    Stop-Service $_.Name -Force -ErrorAction SilentlyContinue
+}
+
+"[$TimeStamp] All services stopped. Ready for patching and reboot." | Tee-Object -Append -FilePath $LogFile
