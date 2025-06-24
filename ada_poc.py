@@ -10,9 +10,9 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from spo_extractor_module import SPOExtractor, SPOTriplet
 from tecamolo_expander import TECAMOLOExpander, TECAMOLOTriplet
 from semantic_dto import SemanticAggregator, SemanticDTO
-from felt_dto import FeltDTO
+from felt_dto_v5 import FeltDTO
 from soulframe_writerV2 import SoulframeWriter
-from prompt_shaper import PromptShaper
+from prompt_shaper_V2 import PromptShaper
 from glyph_agent_core import GlyphAgent
 from staunen_amplifier import staunen_amplifier
 from glyph_filter_preset import apply_preset
