@@ -11,9 +11,9 @@ from spo_extractor_module import SPOExtractor, SPOTriplet
 from tecamolo_expander import TECAMOLOExpander, TECAMOLOTriplet
 from semantic_dto import SemanticAggregator, SemanticDTO
 from felt_dto import FeltDTO
-from soulframe_writer_v1_025 import SoulframeWriter
+from soulframe_writerV2 import SoulframeWriter
 from prompt_shaper import PromptShaper
-from glyph_agent_core_60 import GlyphAgent
+from glyph_agent_core import GlyphAgent
 from staunen_amplifier import staunen_amplifier
 from glyph_filter_preset import apply_preset
 from felt_scene import FeltScene, Keyframe
