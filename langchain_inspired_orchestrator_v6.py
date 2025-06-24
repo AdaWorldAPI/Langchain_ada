@@ -6,7 +6,7 @@ Manages expert chains for task execution within the Soulframe Engine.
 
 from typing import List, Dict, Any
 from service_locator import ServiceLocator
-from expert_selector_v19 import ExpertSelector
+from expert_selector_V20 import ExpertSelector
 import time
 
 class LangChainInspiredOrchestrator:
