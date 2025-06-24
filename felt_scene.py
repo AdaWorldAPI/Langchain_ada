@@ -5,7 +5,7 @@ Models qualia scenes with FeltDTOs, presets, and keyframes for cinematic renderi
 """
 
 from typing import List, Dict
-from felt_dto import FeltDTO
+from felt_dto_v5 import FeltDTO
 
 class Keyframe:
     """Represents a single keyframe in a felt scene."""

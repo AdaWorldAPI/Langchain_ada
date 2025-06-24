@@ -13,7 +13,8 @@ from semantic_dto import SemanticAggregator, SemanticDTO
 from felt_dto_v5 import FeltDTO
 from soulframe_writerV2 import SoulframeWriter
 from prompt_shaper_V2 import PromptShaper
-from glyph_agent_core import GlyphAgent
+from glyph_agent_core import GlyphAgentCore
+from glyph_agent import GlyphAgent
 from staunen_amplifier import staunen_amplifier
 from glyph_filter_preset import apply_preset
 from felt_scene import FeltScene, Keyframe
