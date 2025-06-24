@@ -1,27 +1,47 @@
-# service_locator.py
 """
-Defines the ServiceLocator, a central registry for all system services.
-This enables a decoupled architecture where components can request their
-dependencies without needing to know how they are created or managed.
+Service Locator – Dependency Injection
+-------------------------------------
+Provides a service locator for dependency injection in Ada’s architecture.
 """
-from typing import Dict, Any
+
+from typing import Any, Dict
 
 class ServiceLocator:
-    """A central registry for system services."""
-    def __init__(self):
-        self._services: Dict[str, Any] = {}
-        print("✅ ServiceLocator initialized.")
+    """
+    Singleton service locator for managing dependencies.
+    """
+    _instance = None
 
-    def register(self, name: str, service_instance: Any):
-        """Registers a service instance with a given name."""
-        print(f"  > Registering service: '{name}'")
-        self._services[name] = service_instance
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(ServiceLocator, cls).__new__(cls)
+            cls._instance.services: Dict[str, Any] = {}
+        return cls._instance
 
-    def get(self, name: str) -> Any:
-        """Retrieves a service instance by name."""
-        if name not in self._services:
-            raise ValueError(f"Service '{name}' not found in ServiceLocator.")
-        return self._services[name]
+    def register(self, service_name: str, service_instance: Any) -> None:
+        """
+        Registers a service instance.
 
-# Create a global instance to be used throughout the system
-locator = ServiceLocator()
+        Args:
+            service_name: Name of the service.
+            service_instance: Instance of the service.
+        """
+        self.services[service_name] = service_instance
+        print(f"✅ Registered service: {service_name}")
+
+    def get(self, service_name: str) -> Any:
+        """
+        Retrieves a service instance by name.
+
+        Args:
+            service_name: Name of the service to retrieve.
+
+        Returns:
+            Service instance or None if not found.
+        """
+        return self.services.get(service_name)
+
+if __name__ == "__main__":
+    locator = ServiceLocator()
+    locator.register("test_service", object())
+    print(locator.get("test_service"))

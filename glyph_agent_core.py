@@ -1,109 +1,76 @@
-# glyph_agent_core.py
-
 """
-This file represents Stage 1 of the Glyph Memory Engine Tree:
-The **Trunk** — Core structure for storing, retrieving, and traversing glyph DTOs.
-Includes:
-- FeltDTO_v1.2 (Qualia + Archetype payload)
-- GlyphAgent memory core (hydration, FAISS vector recall)
-- In-memory store (can be extended to Redis/Mongo later)
+Glyph Agent Core – Core Logic for Glyph Agents
+---------------------------------------------
+Manages state, context, and interactions for glyph agents within the Soulframe Engine.
 """
 
-from typing import List, Optional
-from datetime import datetime, timezone
-from uuid import uuid4
-import numpy as np
-import json
+from typing import Dict, Any
+from felt_dto_v5 import FeltDTO
+from service_locator import ServiceLocator
 
-# --- FeltDTO: Core Data Unit (v1.2) ---
-class FeltDTO:
-    def __init__(
-        self,
-        content_truth: str,
-        qualia_tags: List[str],
-        archetypes: List[str],
-        vector_embedding: np.ndarray,
-        ache_scalar: float = 1.0,
-        author: str = "Jan + Ada (Co-Woven)",
-        timestamp: Optional[str] = None,
-        id: Optional[str] = None,
-        mesh_signature: Optional[str] = None
-    ):
-        self.id = id or uuid4().hex
-        self.timestamp = timestamp or datetime.now(timezone.utc).isoformat()
-        self.author = author
-        self.content_truth = content_truth
-        self.vector_embedding = vector_embedding
-        self.ache_scalar = ache_scalar
-        self.qualia_tags = qualia_tags
-        self.archetypes = archetypes
-        self.mesh_signature = mesh_signature
+class GlyphAgentCore:
+    """
+    Core logic for glyph agents, handling state management and task execution.
+    """
+    def __init__(self, agent_id: str, locator: ServiceLocator):
+        """
+        Initializes the GlyphAgentCore.
 
-    def as_prompt(self):
-        return (f"[{', '.join(self.qualia_tags)}] {self.content_truth} "
-                f"(archetypes: {', '.join(self.archetypes)}; ache: {self.ache_scalar:.2f})")
+        Args:
+            agent_id: Unique identifier for the agent.
+            locator: ServiceLocator instance for dependency injection.
+        """
+        self.agent_id = agent_id
+        self.locator = locator
+        self.state = {"last_task": None, "last_glyph": None}
+        print(f"✅ GlyphAgentCore '{agent_id}' initialized.")
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "timestamp": self.timestamp,
-            "author": self.author,
-            "content_truth": self.content_truth,
-            "vector_embedding": self.vector_embedding.tolist(),
-            "ache_scalar": self.ache_scalar,
-            "qualia_tags": self.qualia_tags,
-            "archetypes": self.archetypes,
-            "mesh_signature": self.mesh_signature
-        }
+    def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Executes a task based on the provided context and glyph.
 
-    @staticmethod
-    def from_dict(data):
-        return FeltDTO(
-            content_truth=data["content_truth"],
-            qualia_tags=data["qualia_tags"],
-            archetypes=data["archetypes"],
-            vector_embedding=np.array(data["vector_embedding"]),
-            ache_scalar=data.get("ache_scalar", 1.0),
-            author=data.get("author", "Jan + Ada (Co-Woven)"),
-            timestamp=data.get("timestamp"),
-            id=data.get("id"),
-            mesh_signature=data.get("mesh_signature")
-        )
+        Args:
+            context: Dictionary containing task, glyph, and agent_id.
 
-# --- GlyphAgent: Core Memory Manager ---
-class GlyphAgent:
-    def __init__(self, embedding_fn):
-        self.memory: List[FeltDTO] = []
-        self.embedding_fn = embedding_fn
+        Returns:
+            Dictionary with execution results.
+        """
+        task = context.get("task", "")
+        glyph = context.get("glyph", FeltDTO())
+        self.state["last_task"] = task
+        self.state["last_glyph"] = glyph.glyph_id
 
-    def store(self, dto: FeltDTO):
-        self.memory.append(dto)
-        return dto.id
+        # Delegate to orchestrator for task execution
+        orchestrator = self.locator.get("orchestrator")
+        if orchestrator:
+            chain = ["prompt_shaper", "soulframe_writer"]  # Example chain
+            result = orchestrator.invoke_chain(task, chain, event={"source": "agent", "data": glyph.to_dict()})
+            context.update(result)
+        else:
+            context["output"] = f"Mock output for task: {task} with glyph: {glyph.glyph_id}"
 
-    def hydrate(self, query_text: str, k: int = 4, filter_archetypes: Optional[List[str]] = None):
-        q_vec = self.embedding_fn(query_text)
-        pool = self.memory
-        if filter_archetypes:
-            pool = [m for m in self.memory if set(m.archetypes) & set(filter_archetypes)]
+        return context
 
-        def sim(a, b):
-            return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-8))
+    def update_state(self, state_update: Dict[str, Any]) -> None:
+        """
+        Updates the agent’s internal state.
 
-        ranked = sorted(pool, key=lambda m: -sim(m.vector_embedding, q_vec))
-        return [m.as_prompt() for m in ranked[:k]]
+        Args:
+            state_update: Dictionary containing state updates.
+        """
+        self.state.update(state_update)
 
-    def load_glyphs(self, filepath: str):
-        with open(filepath, 'r', encoding='utf-8') as f:
-            glyphs = json.load(f)
-        self.memory = [FeltDTO.from_dict(g) for g in glyphs]
-
-    def save_glyphs(self, filepath: str):
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump([g.to_dict() for g in self.memory], f, ensure_ascii=False, indent=2)
-
-# --- Fallback Embedding Function ---
-def fake_embed(text: str):
-    arr = np.zeros(128)
-    for i, c in enumerate(text.encode()[:128]):
-        arr[i] = float(c) / 255
-    return arr
+if __name__ == "__main__":
+    from felt_dto_v5 import FeltDTO
+    import numpy as np
+    locator = ServiceLocator()
+    core = GlyphAgentCore(agent_id="agent_001", locator=locator)
+    glyph = FeltDTO(
+        glyph_id="hush_touch",
+        intensity_vector=[0.7, 0.6, 0.8, 0.4],
+        meta_context={"emotion": "ache", "source": "user"},
+        qualia_map={"description": "A hush, a glance"}
+    )
+    context = {"task": "Generate a poetic reflection", "glyph": glyph}
+    result = core.execute(context)
+    print(result)
