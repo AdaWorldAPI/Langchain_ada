@@ -15,8 +15,8 @@ from soulframe_writerV2 import SoulframeWriter
 from prompt_shaper_V2 import PromptShaper
 from glyph_agent_core import GlyphAgentCore
 from glyph_agent import GlyphAgent
-from staunen_amplifier import staunen_amplifier
-from glyph_filter_preset import apply_preset
+from staunen_amplifier import StaunenAmplifier
+from glyph_filter_preset import GlyphFilterPreset
 from felt_scene import FeltScene, Keyframe
 from openworld_kframe import OpenWorldGraph
 from glyph_resonator import GlyphResonator
